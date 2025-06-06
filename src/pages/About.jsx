@@ -43,7 +43,6 @@ function About() {
           I am <span className="text-blue-600">{text}|</span>
         </h1>
 
-        {/* ✅ Summary Section Added Below Typing */}
         <p className="text-gray-700 text-lg mt-4">
           I'm a passionate software developer skilled in building dynamic and scalable web applications. 
           I have hands-on experience with tools like <strong>JavaScript</strong>, <strong>React</strong>, 
@@ -62,11 +61,11 @@ function About() {
         </ul>
       </div>
 
-      {/* Right Side Image */}
+
       <div className="md:w-1/2 mt-10 md:mt-0 flex justify-center">
         <div className="w-72 h-72 bg-gray-200 rounded-full overflow-hidden shadow-md">
           <img
-            src="src/assets/images.png"
+            src="images/images.png"
             alt="My Profile"
             className="w-full h-full object-cover"
           />

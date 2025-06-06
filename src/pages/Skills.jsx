@@ -2,32 +2,32 @@ function Skills() {
   const skills = [
     {
       name: "HTML",
-      image: "src/assets/html.png",
+      image: "images/html.png",
       description: "Markup language for creating structured web content.",
     },
     {
       name: "CSS",
-      image: "src/assets/css.png",
+      image: "images/css.png",
       description: "Stylesheet language used to design visually engaging web pages.",
     },
     {
       name: "JavaScript",
-      image: "src/assets/javascript.png",
+      image: "images/javascript.png",
       description: "Programming language for interactive and dynamic web applications.",
     },
     {
       name: "React",
-      image: "src/assets/react.png",
+      image: "images/react.png",
       description: "JavaScript library for building fast and interactive user interfaces.",
     },
     {
       name: "Django",
-      image: "src/assets/django.jpeg",
+      image: "images/django.jpeg",
       description: "High-level Python web framework that encourages rapid development.",
     },
     {
       name: "MySQL",
-      image: "src/assets/mysql.png",
+      image: "images/mysql.png",
       description: "Popular relational database used to store structured data.",
     },
   ];

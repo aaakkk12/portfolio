@@ -4,19 +4,15 @@ function Projects() {
       title: "Instagram Clone",
       description:
         "A full-stack social media app where users can post images, follow friends, and send messages — built using Django and JavaScript.",
-      image: "src/assets/insta.png",
+      image: "images/insta.png",
       tech: ["Django", "Javascript", "Bootstrap"],
-      github: "https://github.com/yourusername/instagram-clone",
-      demo: "https://your-instagram-clone-demo.vercel.app",
     },
     {
       title: "E-Commerce Website",
       description:
         "A modern online store where users can browse, filter, add to cart, and checkout. Integrated with Stripe and Admin dashboard.",
-      image: "src/assets/eco.jpeg",
+      image: "images/eco.jpeg",
       tech: ["React", "Node.js", "MongoDB", "Tailwind"],
-      github: "https://github.com/yourusername/ecommerce-site",
-      demo: "https://your-ecommerce-site.vercel.app",
     },
   ];
 
