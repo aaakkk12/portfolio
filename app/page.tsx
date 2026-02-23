@@ -6,15 +6,15 @@ const ROTATING_WORDS = [
   "high-impact web experiences.",
   "clean and modern portfolio interfaces.",
   "fast, scalable Next.js websites.",
-];
+] as const;
 
 export default function HomePage() {
-  const [wordIndex, setWordIndex] = useState(0);
-  const [letterCount, setLetterCount] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [wordIndex, setWordIndex] = useState<number>(0);
+  const [letterCount, setLetterCount] = useState<number>(0);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   const activeWord = ROTATING_WORDS[wordIndex];
-  const typedWord = useMemo(
+  const typedWord = useMemo<string>(
     () => activeWord.slice(0, letterCount),
     [activeWord, letterCount],
   );
