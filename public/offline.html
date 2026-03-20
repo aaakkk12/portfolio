@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Offline | Akshit</title>
+    <style>
+      :root {
+        --page-bg: #f7efb5;
+        --ink: #101a72;
+        --ink-soft: rgba(16, 26, 114, 0.82);
+        --card: rgba(255, 251, 221, 0.76);
+        --shadow: rgba(16, 26, 114, 0.1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: var(--page-bg);
+        color: var(--ink);
+      }
+
+      .offline-shell {
+        min-height: 100vh;
+        padding: clamp(1.25rem, 4vw, 2rem) clamp(1rem, 4vw, 2.25rem);
+        display: grid;
+        grid-template-rows: auto 1fr;
+        align-items: start;
+      }
+
+      .offline-topbar {
+        width: min(62rem, 100%);
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 1rem;
+      }
+
+      .offline-title {
+        margin: 0;
+        font-size: clamp(2.1rem, 6vw, 4rem);
+        line-height: 0.95;
+        letter-spacing: -0.05em;
+      }
+
+      .offline-network {
+        display: grid;
+        justify-items: end;
+        gap: 0.45rem;
+      }
+
+      .offline-network-indicator {
+        display: inline-flex;
+        align-items: end;
+        gap: 0.18rem;
+      }
+
+      .offline-network-indicator span {
+        width: 0.18rem;
+        border-radius: 999px;
+        background: rgba(170, 58, 58, 0.95);
+        transition: background-color 160ms ease, opacity 160ms ease;
+      }
+
+      .offline-network-indicator span:nth-child(1) {
+        height: 0.32rem;
+        opacity: 0.52;
+      }
+
+      .offline-network-indicator span:nth-child(2) {
+        height: 0.5rem;
+        opacity: 0.66;
+      }
+
+      .offline-network-indicator span:nth-child(3) {
+        height: 0.68rem;
+        opacity: 0.8;
+      }
+
+      .offline-network-indicator span:nth-child(4) {
+        height: 0.86rem;
+      }
+
+      .offline-network.is-online .offline-network-indicator span {
+        background: rgba(38, 148, 78, 0.98);
+      }
+
+      .offline-back {
+        appearance: none;
+        border: 0;
+        padding: 0;
+        background: transparent;
+        color: var(--ink-soft);
+        font: inherit;
+        font-size: 0.92rem;
+        cursor: pointer;
+        text-decoration: underline;
+        text-underline-offset: 0.16em;
+      }
+
+      .offline-back[hidden] {
+        display: none;
+      }
+
+      .offline-game {
+        width: min(62rem, 100%);
+        margin: 0 auto;
+        display: grid;
+        align-self: center;
+      }
+
+      .offline-canvas-wrap {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        background: transparent;
+      }
+
+      canvas {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      @media (max-width: 640px) {
+        .offline-shell {
+          padding-top: 1.5rem;
+        }
+
+        .offline-title {
+          text-align: left;
+        }
+
+        .offline-topbar {
+          grid-template-columns: 1fr;
+        }
+
+        .offline-network {
+          justify-items: start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="offline-shell">
+      <div class="offline-topbar">
+        <h1 class="offline-title">You are offline.</h1>
+        <div class="offline-network is-offline" id="networkStatus" aria-live="polite">
+          <div class="offline-network-indicator" aria-label="Network status">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <button class="offline-back" type="button" id="backBtn" hidden>Go Back</button>
+        </div>
+      </div>
+
+      <div class="offline-game">
+        <div class="offline-canvas-wrap">
+          <canvas id="runnerGame" width="960" height="280" aria-label="Offline runner game"></canvas>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      (() => {
+        const canvas = document.getElementById("runnerGame");
+        const ctx = canvas.getContext("2d");
+        const backBtn = document.getElementById("backBtn");
+        const networkStatus = document.getElementById("networkStatus");
+
+        const groundY = 220;
+        const gravity = 0.72;
+        const jumpForce = -12.5;
+        const bestScoreKey = "akshit-offline-best-score";
+
+        let player = {};
+        let obstacles = [];
+        let stars = [];
+        let score = 0;
+        let bestScore = Number(localStorage.getItem(bestScoreKey) || 0);
+        let speed = 5;
+        let frame = 0;
+        let started = false;
+        let gameOver = false;
+
+        const reset = () => {
+          player = { x: 88, y: groundY - 34, width: 30, height: 34, velocityY: 0, onGround: true };
+          obstacles = [];
+          stars = Array.from({ length: 26 }, (_, index) => ({
+            x: (index * 53) % canvas.width,
+            y: 36 + ((index * 19) % 92),
+            size: 1 + (index % 2),
+          }));
+          score = 0;
+          speed = 5;
+          frame = 0;
+          started = false;
+          gameOver = false;
+        };
+
+        const jump = () => {
+          if (!started) {
+            started = true;
+          }
+
+          if (gameOver) {
+            reset();
+            started = true;
+            return;
+          }
+
+          if (player.onGround) {
+            player.velocityY = jumpForce;
+            player.onGround = false;
+          }
+        };
+
+        const spawnObstacle = () => {
+          const height = 24 + Math.random() * 34;
+          const width = 18 + Math.random() * 16;
+          obstacles.push({
+            x: canvas.width + width,
+            y: groundY - height,
+            width,
+            height,
+          });
+        };
+
+        const drawBackground = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          ctx.fillStyle = "#fbf6cc";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          ctx.strokeStyle = "rgba(16, 26, 114, 0.1)";
+          ctx.setLineDash([4, 6]);
+          ctx.beginPath();
+          ctx.arc(canvas.width - 160, 84, 54, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          ctx.fillStyle = "rgba(16, 26, 114, 0.22)";
+          stars.forEach((star) => {
+            ctx.fillRect(star.x, star.y, star.size, star.size);
+            star.x -= speed * 0.12;
+            if (star.x < -4) {
+              star.x = canvas.width + Math.random() * 80;
+            }
+          });
+
+          ctx.strokeStyle = "rgba(16, 26, 114, 0.18)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(0, groundY + 0.5);
+          ctx.lineTo(canvas.width, groundY + 0.5);
+          ctx.stroke();
+        };
+
+        const drawPlayer = () => {
+          ctx.fillStyle = "#101a72";
+          ctx.fillRect(player.x, player.y, player.width, player.height);
+
+          ctx.fillStyle = "#f7efb5";
+          ctx.fillRect(player.x + 7, player.y + 7, 4, 4);
+          ctx.fillRect(player.x + 19, player.y + 7, 4, 4);
+        };
+
+        const drawObstacles = () => {
+          ctx.fillStyle = "#d9bc2c";
+          obstacles.forEach((obstacle) => {
+            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+          });
+        };
+
+        const drawHud = () => {
+          ctx.fillStyle = "#101a72";
+          ctx.font = "600 18px Segoe UI, sans-serif";
+          ctx.fillText("Score: " + Math.floor(score), 20, 30);
+          ctx.fillText("Best: " + bestScore, canvas.width - 120, 30);
+
+          if (!started) {
+            ctx.font = "600 26px Segoe UI, sans-serif";
+            ctx.fillText("Tap or press space to start", 280, 74);
+          }
+
+          if (gameOver) {
+            ctx.font = "700 34px Segoe UI, sans-serif";
+            ctx.fillText("Game Over", 370, 92);
+            ctx.font = "600 20px Segoe UI, sans-serif";
+            ctx.fillText("Press again to restart", 360, 124);
+          }
+        };
+
+        const intersects = (a, b) =>
+          a.x < b.x + b.width &&
+          a.x + a.width > b.x &&
+          a.y < b.y + b.height &&
+          a.y + a.height > b.y;
+
+        const update = () => {
+          drawBackground();
+
+          if (started && !gameOver) {
+            frame += 1;
+            score += 0.08;
+            speed += 0.0008;
+
+            if (frame % Math.max(48, Math.floor(92 - speed * 4)) === 0) {
+              spawnObstacle();
+            }
+
+            player.velocityY += gravity;
+            player.y += player.velocityY;
+
+            if (player.y >= groundY - player.height) {
+              player.y = groundY - player.height;
+              player.velocityY = 0;
+              player.onGround = true;
+            }
+
+            obstacles.forEach((obstacle) => {
+              obstacle.x -= speed;
+            });
+
+            obstacles = obstacles.filter((obstacle) => obstacle.x + obstacle.width > -10);
+
+            if (obstacles.some((obstacle) => intersects(player, obstacle))) {
+              gameOver = true;
+              bestScore = Math.max(bestScore, Math.floor(score));
+              localStorage.setItem(bestScoreKey, String(bestScore));
+            }
+          }
+
+          drawPlayer();
+          drawObstacles();
+          drawHud();
+          requestAnimationFrame(update);
+        };
+
+        window.addEventListener("keydown", (event) => {
+          if (event.code === "Space" || event.code === "ArrowUp") {
+            event.preventDefault();
+            jump();
+          }
+        });
+
+        canvas.addEventListener("pointerdown", jump);
+        const syncNetworkState = () => {
+          const online = navigator.onLine;
+          networkStatus.classList.toggle("is-online", online);
+          networkStatus.classList.toggle("is-offline", !online);
+          backBtn.hidden = !online;
+        };
+
+        window.addEventListener("online", syncNetworkState);
+        window.addEventListener("offline", syncNetworkState);
+
+        backBtn.addEventListener("click", () => {
+          if (window.history.length > 1) {
+            window.history.back();
+            return;
+          }
+
+          window.location.href = "/";
+        });
+
+        syncNetworkState();
+        reset();
+        update();
+      })();
+    </script>
+  </body>
+  </html>

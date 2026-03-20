@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Manrope, Space_Mono } from "next/font/google";
 import type { ReactNode } from "react";
+import IdleRobotCursor from "./components/IdleRobotCursor";
+import ServiceWorkerRegistration from "./components/ServiceWorkerRegistration";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -26,7 +28,11 @@ type RootLayoutProps = {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" className={`${manrope.variable} ${spaceMono.variable}`}>
-      <body>{children}</body>
+      <body>
+        <ServiceWorkerRegistration />
+        <IdleRobotCursor />
+        {children}
+      </body>
     </html>
   );
 }
