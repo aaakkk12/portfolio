@@ -8,9 +8,7 @@ const TYPE_SPEED_MS = 105;
 const DELETE_SPEED_MS = 58;
 const LINE_HOLD_MS = 1500;
 const BETWEEN_LINES_MS = 260;
-const MOBILE_REPEAT_DELAY_MS = 10000;
-
-type RobotMode = "pointer" | "fixed" | "disabled";
+type RobotMode = "pointer" | "disabled";
 
 export default function IdleRobotCursor() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -20,18 +18,10 @@ export default function IdleRobotCursor() {
   const [isDialogVisible, setIsDialogVisible] = useState(false);
   const timeoutRef = useRef<number | null>(null);
   const dialogTimeoutsRef = useRef<number[]>([]);
-  const mobileLoopTimeoutRef = useRef<number | null>(null);
 
   const clearDialogTimers = () => {
     dialogTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
     dialogTimeoutsRef.current = [];
-  };
-
-  const clearMobileLoopTimer = () => {
-    if (mobileLoopTimeoutRef.current !== null) {
-      window.clearTimeout(mobileLoopTimeoutRef.current);
-      mobileLoopTimeoutRef.current = null;
-    }
   };
 
   const resetDialog = () => {
@@ -83,11 +73,7 @@ export default function IdleRobotCursor() {
     const mobileQuery = window.matchMedia("(max-width: 768px)");
 
     const getMode = (): RobotMode => {
-      if (mobileQuery.matches) {
-        return "fixed";
-      }
-
-      if (finePointerQuery.matches) {
+      if (!mobileQuery.matches && finePointerQuery.matches) {
         return "pointer";
       }
 
@@ -98,7 +84,6 @@ export default function IdleRobotCursor() {
       const nextMode = getMode();
       setMode(nextMode);
       setIsIdle(false);
-      clearMobileLoopTimer();
       resetDialog();
 
       if (nextMode !== "pointer") {
@@ -114,7 +99,6 @@ export default function IdleRobotCursor() {
       finePointerQuery.removeEventListener("change", updateMode);
       mobileQuery.removeEventListener("change", updateMode);
       document.body.classList.remove("robot-cursor-idle");
-      clearMobileLoopTimer();
       resetDialog();
     };
   }, []);
@@ -221,49 +205,16 @@ export default function IdleRobotCursor() {
     };
   }, [isIdle, mode]);
 
-  useEffect(() => {
-    clearMobileLoopTimer();
-
-    if (mode !== "fixed") {
-      return;
-    }
-
-    let isCancelled = false;
-
-    const loopDialog = () => {
-      if (isCancelled) {
-        return;
-      }
-
-      const sequenceDuration = runDialogSequence();
-
-      mobileLoopTimeoutRef.current = window.setTimeout(() => {
-        loopDialog();
-      }, sequenceDuration + MOBILE_REPEAT_DELAY_MS);
-    };
-
-    loopDialog();
-
-    return () => {
-      isCancelled = true;
-      clearMobileLoopTimer();
-      resetDialog();
-    };
-  }, [mode]);
-
   if (mode === "disabled") {
     return null;
   }
 
-  const isFixedMode = mode === "fixed";
-  const isVisible = isFixedMode || isIdle;
+  const isVisible = isIdle;
 
   return (
     <div
-      className={`idle-robot-cursor ${isVisible ? "is-visible" : ""} ${
-        isFixedMode ? "is-mobile-fixed" : "is-pointer-mode"
-      }`}
-      style={isFixedMode ? undefined : { left: position.x, top: position.y }}
+      className={`idle-robot-cursor ${isVisible ? "is-visible" : ""} is-pointer-mode`}
+      style={{ left: position.x, top: position.y }}
       aria-hidden="true"
     >
       <div className={`idle-robot-dialog ${isDialogVisible ? "is-visible" : ""}`}>
